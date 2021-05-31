@@ -17,7 +17,8 @@ import (
 
 type (
 	crawler struct {
-		links map[string]struct{}
+		links    map[string]struct{}
+		excluded map[string]struct{}
 	}
 
 	Crawler interface {
@@ -43,6 +44,15 @@ func (c *crawler) Run() {
 	if len(url) == 0 {
 		log.Fatal("no site url found")
 	}
+
+	excl := os.Getenv("EXCLUDED")
+	if len(excl) > 0 {
+		excls := strings.Split(excl, ",")
+		for _, ex := range excls {
+			c.excluded[ex] = struct{}{}
+		}
+	}
+
 	page := c.get(url, 0)
 	doc, err := html.Parse(bytes.NewReader(page))
 	if err != nil {
@@ -52,7 +62,8 @@ func (c *crawler) Run() {
 
 	for key := range c.links {
 		k := key
-		if strings.HasPrefix(k, "#") {
+		_, ok := c.excluded[k]
+		if strings.HasPrefix(k, "#") || ok {
 			continue
 		}
 		if strings.HasPrefix(k, "/") {
