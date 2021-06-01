@@ -19,6 +19,7 @@ type (
 	crawler struct {
 		links    map[string]struct{}
 		excluded map[string]struct{}
+		selected map[string]struct{}
 	}
 
 	Crawler interface {
@@ -33,7 +34,11 @@ func main() {
 }
 
 func New() Crawler {
-	return &crawler{links: make(map[string]struct{})}
+	return &crawler{
+		links:    make(map[string]struct{}),
+		excluded: make(map[string]struct{}),
+		selected: make(map[string]struct{}),
+	}
 }
 
 func (c *crawler) Run() {
@@ -43,6 +48,14 @@ func (c *crawler) Run() {
 	}
 	if len(url) == 0 {
 		log.Fatal("no site url found")
+	}
+
+	sel := os.Getenv("SELECTED")
+	if len(sel) > 0 {
+		sels := strings.Split(sel, ",")
+		for _, s := range sels {
+			c.selected[s] = struct{}{}
+		}
 	}
 
 	excl := os.Getenv("EXCLUDED")
@@ -60,8 +73,17 @@ func (c *crawler) Run() {
 	}
 	c.parse(doc)
 
+	var selFlag bool
+	if len(c.selected) > 0 {
+		selFlag = true
+	}
 	for key := range c.links {
 		k := key
+		if selFlag {
+			if _, ok := c.selected[k]; !ok {
+				continue
+			}
+		}
 		_, ok := c.excluded[k]
 		if strings.HasPrefix(k, "#") || ok {
 			continue
