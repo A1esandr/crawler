@@ -111,6 +111,10 @@ func (c *crawler) get(url string, count int) []byte {
 		log.Fatalf("nil response from %s", url)
 	}
 	if resp.StatusCode != http.StatusOK && count < 3 {
+		if count == 2 {
+			log.Println("Not downloaded", url)
+			return []byte{}
+		}
 		log.Println("Error loading", url)
 		time.Sleep(time.Duration(300+rand.Intn(1000)) * time.Millisecond)
 		return c.get(url, count+1)
