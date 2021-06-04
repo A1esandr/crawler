@@ -28,6 +28,8 @@ type (
 )
 
 var urlFlag = flag.String("url", "", "URL of the site, for example, https://golang.org")
+var excludedFlag = flag.String("exclude", "", "URL of the site separated by commas to exclude from parsing")
+var selectedFlag = flag.String("select", "", "URL of the site separated by commas to parse only")
 
 func main() {
 	New().Run()
@@ -51,6 +53,9 @@ func (c *crawler) Run() {
 	}
 
 	sel := os.Getenv("SELECTED")
+	if len(sel) == 0 {
+		sel = *selectedFlag
+	}
 	if len(sel) > 0 {
 		sels := strings.Split(sel, ",")
 		for _, s := range sels {
@@ -59,6 +64,9 @@ func (c *crawler) Run() {
 	}
 
 	excl := os.Getenv("EXCLUDED")
+	if len(excl) == 0 {
+		excl = *excludedFlag
+	}
 	if len(excl) > 0 {
 		excls := strings.Split(excl, ",")
 		for _, ex := range excls {
