@@ -32,6 +32,7 @@ var excludedFlag = flag.String("exclude", "", "URL of the site separated by comm
 var selectedFlag = flag.String("select", "", "URL of the site separated by commas to parse only")
 
 func main() {
+	flag.Parse()
 	New().Run()
 }
 
