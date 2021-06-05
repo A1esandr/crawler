@@ -75,6 +75,8 @@ func (c *crawler) Run() {
 		}
 	}
 
+	fmt.Println("Started")
+
 	page := c.get(url, 0)
 	doc, err := html.Parse(bytes.NewReader(page))
 	if err != nil {
