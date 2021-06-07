@@ -20,6 +20,7 @@ type (
 		links    map[string]struct{}
 		excluded map[string]struct{}
 		selected map[string]struct{}
+		from     map[string]map[string]struct{}
 	}
 
 	Crawler interface {
@@ -41,6 +42,7 @@ func New() Crawler {
 		links:    make(map[string]struct{}),
 		excluded: make(map[string]struct{}),
 		selected: make(map[string]struct{}),
+		from:     make(map[string]map[string]struct{}),
 	}
 }
 
@@ -82,7 +84,7 @@ func (c *crawler) Run() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	c.parse(doc)
+	c.parse(doc, url)
 
 	var selFlag bool
 	if len(c.selected) > 0 {
@@ -106,7 +108,7 @@ func (c *crawler) Run() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.parse(doc)
+		c.parse(doc, k)
 	}
 
 	c.print()
@@ -143,24 +145,33 @@ func (c *crawler) get(url string, count int) []byte {
 	return data
 }
 
-func (c *crawler) parse(n *html.Node) {
+func (c *crawler) parse(n *html.Node, url string) {
 	if n.Type == html.ElementNode && n.Data == "a" {
 		for _, at := range n.Attr {
 			if at.Key == "href" {
 				if _, ok := c.links[at.Val]; !ok && c.allowed(at.Val) {
 					c.links[at.Val] = struct{}{}
+					if _, exist := c.from[url]; !exist {
+						c.from[url] = make(map[string]struct{})
+					}
+					c.from[url][at.Val] = struct{}{}
 				}
 			}
 		}
 	}
 	for nn := n.FirstChild; nn != nil; nn = nn.NextSibling {
-		c.parse(nn)
+		c.parse(nn, url)
 	}
 }
 
 func (c *crawler) print() {
 	for key := range c.links {
 		fmt.Println(key)
+	}
+	for keyMap, val := range c.from {
+		for key := range val {
+			fmt.Println(key, "from", keyMap)
+		}
 	}
 }
 
