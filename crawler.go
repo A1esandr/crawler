@@ -95,8 +95,7 @@ func (c *crawler) Run() {
 				continue
 			}
 		}
-		_, ok := c.excluded[k]
-		if strings.HasPrefix(k, "#") || ok {
+		if _, ok := c.excluded[k]; ok {
 			continue
 		}
 		if strings.HasPrefix(k, "/") {
@@ -148,7 +147,7 @@ func (c *crawler) parse(n *html.Node) {
 	if n.Type == html.ElementNode && n.Data == "a" {
 		for _, at := range n.Attr {
 			if at.Key == "href" {
-				if _, ok := c.links[at.Val]; !ok {
+				if _, ok := c.links[at.Val]; !ok && c.allowed(at.Val) {
 					c.links[at.Val] = struct{}{}
 				}
 			}
@@ -163,4 +162,14 @@ func (c *crawler) print() {
 	for key := range c.links {
 		fmt.Println(key)
 	}
+}
+
+func (c *crawler) allowed(url string) bool {
+	if strings.HasPrefix(url, "#") {
+		return false
+	}
+	if strings.HasPrefix(url, "mailto:") {
+		return false
+	}
+	return true
 }
