@@ -1,4 +1,4 @@
-package main
+package crawler
 
 import (
 	"bytes"
@@ -31,11 +31,6 @@ type (
 var urlFlag = flag.String("url", "", "URL of the site, for example, https://golang.org")
 var excludedFlag = flag.String("exclude", "", "URL of the site separated by commas to exclude from parsing")
 var selectedFlag = flag.String("select", "", "URL of the site separated by commas to parse only")
-
-func main() {
-	flag.Parse()
-	New().Run()
-}
 
 func New() Crawler {
 	return &crawler{
