@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -24,7 +25,7 @@ type (
 	}
 
 	Crawler interface {
-		Run()
+		Run() ([]string, error)
 	}
 )
 
@@ -41,13 +42,13 @@ func New() Crawler {
 	}
 }
 
-func (c *crawler) Run() {
+func (c *crawler) Run() ([]string, error) {
 	url := os.Getenv("URL")
 	if len(url) == 0 {
 		url = *urlFlag
 	}
 	if len(url) == 0 {
-		log.Fatal("no site url found")
+		return nil, errors.New("no site url found")
 	}
 
 	sel := os.Getenv("SELECTED")
@@ -77,7 +78,7 @@ func (c *crawler) Run() {
 	page := c.get(url, 0)
 	doc, err := html.Parse(bytes.NewReader(page))
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	c.parse(doc, url)
 
@@ -101,12 +102,18 @@ func (c *crawler) Run() {
 		page := c.get(k, 0)
 		doc, err := html.Parse(bytes.NewReader(page))
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		c.parse(doc, k)
 	}
 
 	c.print()
+	result := make([]string, len(c.links))
+	i := 0
+	for key := range c.links {
+		result[i] = key
+	}
+	return result, nil
 }
 
 func (c *crawler) get(url string, count int) []byte {
