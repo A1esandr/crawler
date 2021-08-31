@@ -18,10 +18,7 @@ import (
 
 type (
 	crawler struct {
-		links    map[string]struct{}
-		excluded map[string]struct{}
-		selected map[string]struct{}
-		from     map[string]map[string]struct{}
+		links map[string]struct{}
 	}
 
 	Crawler interface {
@@ -30,15 +27,10 @@ type (
 )
 
 var urlFlag = flag.String("url", "", "URL of the site, for example, https://golang.org")
-var excludedFlag = flag.String("exclude", "", "URL of the site separated by commas to exclude from parsing")
-var selectedFlag = flag.String("select", "", "URL of the site separated by commas to parse only")
 
 func New() Crawler {
 	return &crawler{
-		links:    make(map[string]struct{}),
-		excluded: make(map[string]struct{}),
-		selected: make(map[string]struct{}),
-		from:     make(map[string]map[string]struct{}),
+		links: make(map[string]struct{}),
 	}
 }
 
@@ -50,29 +42,6 @@ func (c *crawler) Run() ([]string, error) {
 	if len(url) == 0 {
 		return nil, errors.New("no site url found")
 	}
-
-	sel := os.Getenv("SELECTED")
-	if len(sel) == 0 {
-		sel = *selectedFlag
-	}
-	if len(sel) > 0 {
-		sels := strings.Split(sel, ",")
-		for _, s := range sels {
-			c.selected[s] = struct{}{}
-		}
-	}
-
-	excl := os.Getenv("EXCLUDED")
-	if len(excl) == 0 {
-		excl = *excludedFlag
-	}
-	if len(excl) > 0 {
-		excls := strings.Split(excl, ",")
-		for _, ex := range excls {
-			c.excluded[ex] = struct{}{}
-		}
-	}
-
 	fmt.Println("Started")
 
 	page := c.get(url, 0)
@@ -81,7 +50,6 @@ func (c *crawler) Run() ([]string, error) {
 		return nil, err
 	}
 	c.parse(doc, url)
-	c.print()
 	result := make([]string, len(c.links))
 	i := 0
 	for key := range c.links {
@@ -132,27 +100,12 @@ func (c *crawler) parse(n *html.Node, url string) {
 			if at.Key == "href" {
 				if _, ok := c.links[at.Val]; !ok && c.allowed(at.Val) {
 					c.links[at.Val] = struct{}{}
-					if _, exist := c.from[url]; !exist {
-						c.from[url] = make(map[string]struct{})
-					}
-					c.from[url][at.Val] = struct{}{}
 				}
 			}
 		}
 	}
 	for nn := n.FirstChild; nn != nil; nn = nn.NextSibling {
 		c.parse(nn, url)
-	}
-}
-
-func (c *crawler) print() {
-	for key := range c.links {
-		fmt.Println(key)
-	}
-	for keyMap, val := range c.from {
-		for key := range val {
-			fmt.Println(key, "from", keyMap)
-		}
 	}
 }
 
