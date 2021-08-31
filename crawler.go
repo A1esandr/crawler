@@ -81,37 +81,16 @@ func (c *crawler) Run() ([]string, error) {
 		return nil, err
 	}
 	c.parse(doc, url)
-
-	var selFlag bool
-	if len(c.selected) > 0 {
-		selFlag = true
-	}
-	for key := range c.links {
-		k := key
-		if selFlag {
-			if _, ok := c.selected[k]; !ok {
-				continue
-			}
-		}
-		if _, ok := c.excluded[k]; ok {
-			continue
-		}
-		if strings.HasPrefix(k, "/") {
-			k = url + k
-		}
-		page := c.get(k, 0)
-		doc, err := html.Parse(bytes.NewReader(page))
-		if err != nil {
-			return nil, err
-		}
-		c.parse(doc, k)
-	}
-
 	c.print()
 	result := make([]string, len(c.links))
 	i := 0
 	for key := range c.links {
-		result[i] = key
+		if strings.HasPrefix(key, "/") {
+			result[i] = url + key
+		} else {
+			result[i] = key
+		}
+		i++
 	}
 	return result, nil
 }
