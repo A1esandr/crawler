@@ -8,9 +8,15 @@ import (
 	"github.com/A1esandr/crawler"
 )
 
+var urlFlag = flag.String("url", "", "URL of the site, for example, https://golang.org")
+
 func main() {
 	flag.Parse()
-	links, err := crawler.New().Run()
+	url := os.Getenv("URL")
+	if len(url) == 0 {
+		url = *urlFlag
+	}
+	links, err := crawler.New().Run(url)
 	if err != nil {
 		fmt.Println(err)
 		return

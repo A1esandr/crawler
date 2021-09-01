@@ -3,13 +3,11 @@ package crawler
 import (
 	"bytes"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -22,11 +20,9 @@ type (
 	}
 
 	Crawler interface {
-		Run() ([]string, error)
+		Run(url string) ([]string, error)
 	}
 )
-
-var urlFlag = flag.String("url", "", "URL of the site, for example, https://golang.org")
 
 func New() Crawler {
 	return &crawler{
@@ -34,17 +30,16 @@ func New() Crawler {
 	}
 }
 
-func (c *crawler) Run() ([]string, error) {
-	url := os.Getenv("URL")
-	if len(url) == 0 {
-		url = *urlFlag
-	}
+func (c *crawler) Run(url string) ([]string, error) {
 	if len(url) == 0 {
 		return nil, errors.New("no site url found")
 	}
 	fmt.Println("Started")
 
-	page := c.get(url, 0)
+	page, err := c.get(url, 0)
+	if err != nil {
+		return nil, err
+	}
 	doc, err := html.Parse(bytes.NewReader(page))
 	if err != nil {
 		return nil, err
@@ -63,18 +58,17 @@ func (c *crawler) Run() ([]string, error) {
 	return result, nil
 }
 
-func (c *crawler) get(url string, count int) []byte {
+func (c *crawler) get(url string, count int) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatalf("error get %s: %s", url, err.Error())
+		return nil, fmt.Errorf("error get %s: %s", url, err.Error())
 	}
 	if resp == nil {
-		log.Fatalf("nil response from %s", url)
+		return nil, fmt.Errorf("nil response from %s", url)
 	}
 	if resp.StatusCode != http.StatusOK && count < 3 {
 		if count == 2 {
-			log.Println("Not downloaded", url)
-			return []byte{}
+			return []byte{}, fmt.Errorf("not downloaded", url)
 		}
 		log.Println("Error loading", url)
 		time.Sleep(time.Duration(300+rand.Intn(1000)) * time.Millisecond)
@@ -83,15 +77,15 @@ func (c *crawler) get(url string, count int) []byte {
 	defer func() {
 		closeErr := resp.Body.Close()
 		if closeErr != nil {
-			log.Fatalf("error close response body %s", closeErr.Error())
+			log.Printf("error close response body %s \n", closeErr.Error())
 		}
 	}()
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("error resp response body %s", err.Error())
+		return nil, fmt.Errorf("error resp response body %s", err.Error())
 	}
 	fmt.Println("Loaded", url)
-	return data
+	return data, nil
 }
 
 func (c *crawler) parse(n *html.Node, url string) {
