@@ -35,7 +35,7 @@ func (c *crawler) Run(url string) ([]string, error) {
 	if len(url) == 0 {
 		return nil, errors.New("no site url found")
 	}
-	fmt.Println("Started")
+	fmt.Printf("Loading %s \n", url)
 
 	page, err := c.get(url, 0)
 	if err != nil {
