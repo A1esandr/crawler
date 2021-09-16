@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	neturl "net/url"
 	"strings"
 	"time"
 
@@ -45,11 +46,15 @@ func (c *crawler) Run(url string) ([]string, error) {
 		return nil, err
 	}
 	c.parse(doc, url)
+	u, err := neturl.Parse(url)
+	if err != nil {
+		return nil, err
+	}
 	result := make([]string, len(c.links))
 	i := 0
 	for key := range c.links {
 		if strings.HasPrefix(key, "/") {
-			result[i] = url + key
+			result[i] = u.Host + key
 		} else {
 			result[i] = key
 		}
