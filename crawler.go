@@ -54,7 +54,7 @@ func (c *crawler) Run(url string) ([]string, error) {
 	i := 0
 	for key := range c.links {
 		if strings.HasPrefix(key, "/") {
-			result[i] = u.Host + key
+			result[i] = u.Scheme + "://" + u.Host + key
 		} else {
 			result[i] = key
 		}
