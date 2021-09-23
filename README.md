@@ -1,6 +1,11 @@
 # crawler
 Website crawler
 
+## Usage
+
+### Prerequisites
+* Go 1.16
+
 ### Example 
 ```
 links, err := crawler.New().Run(url)
